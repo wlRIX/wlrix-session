@@ -1,0 +1,12 @@
+[package]
+name = "wlrix-session"
+version = "0.0.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+description = "wlRIX session manager — launches the compositor and core desktop apps, supervises the session."
+repository = "https://github.com/wlrix/wlrix-session"
+publish = false
+
+[dependencies]
+# Process supervision / config parsing deps get added here as the session grows.
+# Kept dependency-free for the initial scaffold so `cargo build` works offline.
