@@ -99,9 +99,12 @@ fn main() -> std::process::ExitCode {
     }
 
     let loaded = config::load();
-    match &loaded.path {
-        Some(path) => info!("config {}", path.display()),
-        None => info!("no config file; using defaults"),
+    match &loaded.source {
+        config::Source::File(path) => info!("config {}", path.display()),
+        config::Source::Rejected(path) => {
+            info!("ignoring {}; using the default session", path.display())
+        }
+        config::Source::None => info!("no config file; using defaults"),
     }
 
     let mut environment = Environment::base();
@@ -119,7 +122,7 @@ fn main() -> std::process::ExitCode {
 
     // An empty list in a config file means "no apps", so the defaults only apply when
     // nothing said anything at all.
-    let app_list: Vec<AppSpec> = match (args.apps, loaded.path.is_some()) {
+    let app_list: Vec<AppSpec> = match (args.apps, loaded.source.is_configured()) {
         (Some(apps), _) => apps,
         (None, true) => loaded.config.apps,
         (None, false) => apps::DEFAULT_APPS

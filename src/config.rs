@@ -70,12 +70,31 @@ impl AppSpec {
 /// A config file, and where it came from.
 pub struct Loaded {
     pub config: Config,
-    /// `None` when no config file exists, which is not an error -- it is the ordinary
-    /// case on a fresh install, and the built-in defaults apply.
+    pub source: Source,
+}
+
+/// Where the session's settings came from.
+///
+/// "No file" and "a file we could not use" both end in the defaults, but they are not
+/// the same thing to whoever is reading the log: one is the ordinary case on a fresh
+/// install, the other means a file they wrote is being ignored.
+pub enum Source {
+    /// No config file anywhere.
+    None,
+    /// Read and used.
+    File(PathBuf),
+    /// Found, but unusable. The reason has already been reported.
+    Rejected(PathBuf),
+}
+
+impl Source {
+    /// Whether a config file actually had a say.
     ///
-    /// Also, `None` when a file existed but could not be read, since the defaults are
-    /// what ends up being used either way.
-    pub path: Option<PathBuf>,
+    /// This is what decides if the built-in defaults apply: a rejected file must not
+    /// be read as "the user asked for no apps".
+    pub fn is_configured(&self) -> bool {
+        matches!(self, Self::File(_))
+    }
 }
 
 /// Read the session config.
@@ -88,31 +107,29 @@ pub fn load() -> Loaded {
     let Some(path) = find() else {
         return Loaded {
             config: Config::default(),
-            path: None,
+            source: Source::None,
         };
+    };
+
+    let rejected = |path: PathBuf| Loaded {
+        config: Config::default(),
+        source: Source::Rejected(path),
     };
 
     match std::fs::read_to_string(&path) {
         Ok(text) => match toml::from_str::<Config>(&text) {
             Ok(config) => Loaded {
                 config,
-                path: Some(path),
+                source: Source::File(path),
             },
             Err(err) => {
                 warn!("{} is not valid: {err}", path.display());
-                warn!("carrying on with the default session");
-                Loaded {
-                    config: Config::default(),
-                    path: None,
-                }
+                rejected(path)
             }
         },
         Err(err) => {
             warn!("could not read {}: {err}", path.display());
-            Loaded {
-                config: Config::default(),
-                path: None,
-            }
+            rejected(path)
         }
     }
 }
