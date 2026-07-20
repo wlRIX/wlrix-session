@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=wlRIX
+Comment=The wlRIX desktop environment
+Exec=wlrix-session
+TryExec=wlrix-session
+Type=Application
+DesktopNames=wlRIX

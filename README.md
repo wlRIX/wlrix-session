@@ -15,6 +15,24 @@ cargo build
 cargo run
 ```
 
+## Installing
+
+The session is launched by a display manager (or by `wlrix-greeter`) through a session
+entry:
+
+```sh
+install -Dm644 share/wayland-sessions/wlrix.desktop \
+    /usr/share/wayland-sessions/wlrix.desktop
+```
+
+`wlrix-session`, `wlrix-compositor` and the desktop's apps need to be on `PATH`, or
+named by absolute path in the config.
+
+Note that `desktop-file-validate` objects to `DesktopNames`, which is how a session
+tells the display manager what to set `XDG_CURRENT_DESKTOP` to. It is a session-file
+convention rather than part of the desktop-entry spec, so the validator does not know
+it — the shipped `plasma.desktop` fails the same check. It is correct; leave it.
+
 ## Configuration
 
 Read from `$XDG_CONFIG_HOME/wlrix/session.toml` (or `~/.config/wlrix/session.toml`),
@@ -61,10 +79,10 @@ Anything given on the command line wins over the config file.
 Both the session and the compositor write to the temp directory as well as the
 terminal, truncating at startup so each file is a record of the current session:
 
-| File | Contents |
-| --- | --- |
-| `$TMPDIR/wlrix-session.log` | the session's own messages, **and the apps' stdout and stderr** |
-| `$TMPDIR/wlrix-compositor.log` | the compositor's log |
+| File                           | Contents                                                        |
+|--------------------------------|-----------------------------------------------------------------|
+| `$TMPDIR/wlrix-session.log`    | the session's own messages, **and the apps' stdout and stderr** |
+| `$TMPDIR/wlrix-compositor.log` | the compositor's log                                            |
 
 This matters most on a TTY, where the console the session was writing to is covered by
 the compositor the moment it starts: the text is there, but none of it can be read. If
