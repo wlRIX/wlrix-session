@@ -67,7 +67,7 @@ pub fn start(command: &str, environment: &Environment) -> Result<Compositor, Str
                     }
                 }
                 // Anything else on stdout is the compositor talking to a human.
-                _ => println!("{line}"),
+                _ => crate::log::out(format_args!("compositor: {line}")),
             }
         }
     });
@@ -123,9 +123,9 @@ fn collect(
         match receiver.recv_timeout(XWAYLAND_TIMEOUT) {
             Ok((key, value)) => environment.set(&key, &value),
             Err(_) => {
-                eprintln!(
-                    "wlrix-session: no DISPLAY from the compositor; X11 applications \
-                     will not run this session"
+                warn!(
+                    "no DISPLAY from the compositor; X11 applications will not run \
+                     this session"
                 );
             }
         }

@@ -28,21 +28,21 @@ pub fn start_all(apps: &[AppSpec], environment: &Environment) -> Vec<App> {
         match Command::new(&app.command)
             .args(&app.args)
             .envs(environment.iter())
+            // Into the session log: an app that fails on startup says why on its own
+            // stderr, and on a TTY that would go to the console the compositor covers.
+            .stdout(crate::log::child_output())
+            .stderr(crate::log::child_output())
             .spawn()
         {
             Ok(child) => {
-                println!(
-                    "wlrix-session: started {} (pid {})",
-                    app.command,
-                    child.id()
-                );
+                info!("started {} (pid {})", app.command, child.id());
                 started.push(App {
                     name: app.command.clone(),
                     child,
                 });
             }
             Err(err) => {
-                eprintln!("wlrix-session: could not start {}: {err}", app.command);
+                warn!("could not start {}: {err}", app.command);
             }
         }
     }
@@ -60,15 +60,15 @@ pub fn stop_all(apps: Vec<App>) {
             Ok(Some(_)) => continue,
             Ok(None) => {}
             Err(err) => {
-                eprintln!("wlrix-session: could not check {}: {err}", app.name);
+                warn!("could not check {}: {err}", app.name);
                 continue;
             }
         }
         if let Err(err) = app.child.kill() {
-            eprintln!("wlrix-session: could not stop {}: {err}", app.name);
+            warn!("could not stop {}: {err}", app.name);
             continue;
         }
         let _ = app.child.wait();
-        println!("wlrix-session: stopped {}", app.name);
+        info!("stopped {}", app.name);
     }
 }

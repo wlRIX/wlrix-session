@@ -99,8 +99,8 @@ pub fn load() -> Loaded {
                 path: Some(path),
             },
             Err(err) => {
-                eprintln!("wlrix-session: {} is not valid: {err}", path.display());
-                eprintln!("wlrix-session: carrying on with the default session");
+                warn!("{} is not valid: {err}", path.display());
+                warn!("carrying on with the default session");
                 Loaded {
                     config: Config::default(),
                     path: None,
@@ -108,7 +108,7 @@ pub fn load() -> Loaded {
             }
         },
         Err(err) => {
-            eprintln!("wlrix-session: could not read {}: {err}", path.display());
+            warn!("could not read {}: {err}", path.display());
             Loaded {
                 config: Config::default(),
                 path: None,

@@ -12,6 +12,9 @@
 //! The compositor is the session: when it exits, the session tears down and exits with
 //! its status.
 
+#[macro_use]
+mod log;
+
 mod apps;
 mod compositor;
 mod config;
@@ -84,15 +87,21 @@ fn main() -> std::process::ExitCode {
     let args = match parse_args() {
         Ok(args) => args,
         Err(err) => {
-            eprintln!("wlrix-session: {err}");
+            warn!("{err}");
             return std::process::ExitCode::from(2);
         }
     };
 
+    // Before anything is reported, so nothing is lost from the record.
+    let log_path = log::init();
+    if let Some(path) = &log_path {
+        info!("logging to {}", path.display());
+    }
+
     let loaded = config::load();
     match &loaded.path {
-        Some(path) => println!("wlrix-session: config {}", path.display()),
-        None => println!("wlrix-session: no config file; using defaults"),
+        Some(path) => info!("config {}", path.display()),
+        None => info!("no config file; using defaults"),
     }
 
     let mut environment = Environment::base();
@@ -119,11 +128,11 @@ fn main() -> std::process::ExitCode {
             .collect(),
     };
 
-    println!("wlrix-session: starting {compositor_command}");
+    info!("starting {compositor_command}");
     let mut compositor = match compositor::start(&compositor_command, &environment) {
         Ok(compositor) => compositor,
         Err(err) => {
-            eprintln!("wlrix-session: {err}");
+            warn!("{err}");
             return std::process::ExitCode::FAILURE;
         }
     };
@@ -135,8 +144,8 @@ fn main() -> std::process::ExitCode {
 
     for key in ["WAYLAND_DISPLAY", "DISPLAY"] {
         match compositor.environment.get(key) {
-            Some(value) => println!("wlrix-session: {key}={value}"),
-            None => println!("wlrix-session: {key} unset"),
+            Some(value) => info!("{key}={value}"),
+            None => info!("{key} unset"),
         }
     }
 
@@ -149,7 +158,7 @@ fn main() -> std::process::ExitCode {
 
     match status {
         Ok(status) => {
-            println!("wlrix-session: compositor exited ({status})");
+            info!("compositor exited ({status})");
             // A compositor that died because we passed a shutdown signal on to it did
             // what was asked, even though it exited by signal rather than cleanly.
             if status.success() || signals::shutdown_requested() {
@@ -159,7 +168,7 @@ fn main() -> std::process::ExitCode {
             }
         }
         Err(err) => {
-            eprintln!("wlrix-session: could not wait for the compositor: {err}");
+            warn!("could not wait for the compositor: {err}");
             std::process::ExitCode::FAILURE
         }
     }

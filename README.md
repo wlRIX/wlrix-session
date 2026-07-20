@@ -56,6 +56,20 @@ Anything given on the command line wins over the config file.
 | `--no-apps`              | start the compositor only                              |
 | `-h`, `--help`           | usage                                                  |
 
+## Logs
+
+Both the session and the compositor write to the temp directory as well as the
+terminal, truncating at startup so each file is a record of the current session:
+
+| File | Contents |
+| --- | --- |
+| `$TMPDIR/wlrix-session.log` | the session's own messages, **and the apps' stdout and stderr** |
+| `$TMPDIR/wlrix-compositor.log` | the compositor's log |
+
+This matters most on a TTY, where the console the session was writing to is covered by
+the compositor the moment it starts: the text is there, but none of it can be read. If
+an app does not appear, its own error is in the session log.
+
 ## How the environment reaches apps
 
 `WAYLAND_DISPLAY` and `DISPLAY` are not known until the compositor and XWayland are
