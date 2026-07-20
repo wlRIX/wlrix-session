@@ -8,5 +8,6 @@ repository = "https://github.com/wlrix/wlrix-session"
 publish = false
 
 [dependencies]
-# Process supervision / config parsing deps get added here as the session grows.
-# Kept dependency-free for the initial scaffold so `cargo build` works offline.
+# Only for signal handling: forwarding SIGTERM/SIGINT to the compositor rather than
+# dying and orphaning it. Everything else the session needs is in std.
+libc = "0.2"

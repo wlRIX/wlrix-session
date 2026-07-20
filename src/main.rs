@@ -15,6 +15,7 @@
 mod apps;
 mod compositor;
 mod environment;
+mod signals;
 
 use environment::Environment;
 
@@ -102,6 +103,11 @@ fn main() -> std::process::ExitCode {
         }
     };
 
+    // From here on a shutdown request has somewhere to go. Installed before the apps
+    // start, so a signal arriving mid-startup still brings the compositor down rather
+    // than orphaning it.
+    signals::forward_to(compositor.child.id());
+
     for key in ["WAYLAND_DISPLAY", "DISPLAY"] {
         match compositor.environment.get(key) {
             Some(value) => println!("wlrix-session: {key}={value}"),
@@ -119,7 +125,9 @@ fn main() -> std::process::ExitCode {
     match status {
         Ok(status) => {
             println!("wlrix-session: compositor exited ({status})");
-            if status.success() {
+            // A compositor that died because we passed a shutdown signal on to it did
+            // what was asked, even though it exited by signal rather than cleanly.
+            if status.success() || signals::shutdown_requested() {
                 std::process::ExitCode::SUCCESS
             } else {
                 std::process::ExitCode::FAILURE
