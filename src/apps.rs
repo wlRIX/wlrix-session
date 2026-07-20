@@ -11,11 +11,9 @@
 
 use std::process::{Child, Command};
 
-use crate::environment::Environment;
+use crate::{config::AppSpec, environment::Environment};
 
-/// What the session starts, in order.
-///
-/// Fixed for now. This is the natural place for a config file once wlRIX has one.
+/// What the session starts when there is no config file to say otherwise.
 pub const DEFAULT_APPS: &[&str] = &["wlrix-toolchest", "wlrix-desks"];
 
 pub struct App {
@@ -24,19 +22,27 @@ pub struct App {
 }
 
 /// Start each app, skipping any that will not run.
-pub fn start_all(apps: &[String], environment: &Environment) -> Vec<App> {
+pub fn start_all(apps: &[AppSpec], environment: &Environment) -> Vec<App> {
     let mut started = Vec::new();
-    for name in apps {
-        match Command::new(name).envs(environment.iter()).spawn() {
+    for app in apps {
+        match Command::new(&app.command)
+            .args(&app.args)
+            .envs(environment.iter())
+            .spawn()
+        {
             Ok(child) => {
-                println!("wlrix-session: started {name} (pid {})", child.id());
+                println!(
+                    "wlrix-session: started {} (pid {})",
+                    app.command,
+                    child.id()
+                );
                 started.push(App {
-                    name: name.clone(),
+                    name: app.command.clone(),
                     child,
                 });
             }
             Err(err) => {
-                eprintln!("wlrix-session: could not start {name}: {err}");
+                eprintln!("wlrix-session: could not start {}: {err}", app.command);
             }
         }
     }

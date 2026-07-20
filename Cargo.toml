@@ -9,5 +9,9 @@ publish = false
 
 [dependencies]
 # Only for signal handling: forwarding SIGTERM/SIGINT to the compositor rather than
-# dying and orphaning it. Everything else the session needs is in std.
+# dying and orphaning it.
 libc = "0.2"
+# The session config file. TOML is wlRIX's config format throughout, so the compositor
+# and greeter read the same shape of file.
+serde = { version = "1", features = ["derive"] }
+toml = "1"
