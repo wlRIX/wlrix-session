@@ -27,9 +27,19 @@ const LOG_NAME: &str = "wlrix-session.log";
 /// terminal is all there is -- worth carrying on for, not worth failing to start over.
 static FILE: OnceLock<Option<Mutex<File>>> = OnceLock::new();
 
+/// Where the log lives: the per-user runtime directory if there is one, else the temp
+/// directory. `$XDG_RUNTIME_DIR` is owned by one user, so the session's log does not
+/// collide with the greeter's the way `/tmp` does.
+fn log_dir() -> PathBuf {
+    std::env::var_os("XDG_RUNTIME_DIR")
+        .map(PathBuf::from)
+        .filter(|dir| dir.is_absolute())
+        .unwrap_or_else(std::env::temp_dir)
+}
+
 /// Open the log file, truncating it. Returns where it is, if anywhere.
 pub fn init() -> Option<PathBuf> {
-    let path = std::env::temp_dir().join(LOG_NAME);
+    let path = log_dir().join(LOG_NAME);
     let opened = match create(&path) {
         Ok(file) => Some(Mutex::new(file)),
         Err(err) => {
