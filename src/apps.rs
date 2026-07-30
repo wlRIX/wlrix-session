@@ -3,7 +3,9 @@
 //!
 //! These are ordinary Wayland clients -- the toolchest and desks are normal windows in
 //! IRIX, not shell components -- so there is nothing special about starting them beyond
-//! doing it after the compositor exists and with its environment.
+//! doing it after the compositor exists and with its environment. `wlrix-desktop` is the
+//! exception in kind, being a layer-shell background surface rather than a window, but it
+//! is started exactly the same way.
 //!
 //! An app that is missing or fails to start is reported and skipped. A desktop with no
 //! toolchest is poor, but better than no desktop at all, and the compositor is still
@@ -14,7 +16,11 @@ use std::process::{Child, Command};
 use crate::{config::AppSpec, environment::Environment};
 
 /// What the session starts when there is no config file to say otherwise.
-pub const DEFAULT_APPS: &[&str] = &["wlrix-toolchest", "wlrix-desks"];
+///
+/// The desktop comes first so its background surface is up before any window can open over
+/// it. Nothing depends on that ordering -- a layer surface goes below windows whenever it
+/// arrives -- but starting the backdrop last would show a bare desktop for a moment.
+pub const DEFAULT_APPS: &[&str] = &["wlrix-desktop", "wlrix-toolchest", "wlrix-desks"];
 
 pub struct App {
     pub name: String,
