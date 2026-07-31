@@ -70,6 +70,9 @@ fn parse_args() -> Result<Args, String> {
                        --no-apps               start the compositor only\n  \
                        -h, --help              this message\n\n\
                      Config: $XDG_CONFIG_HOME/wlrix/session.toml, else /etc/wlrix/session.toml\n\
+                     Autostart: the same directories' autostart.toml, added to the default\n\
+                     \x20          session only -- not when a config file or --app/--no-apps\n\
+                     \x20          has already said what the session is\n\
                      Default apps when unconfigured: {}",
                     env!("CARGO_PKG_VERSION"),
                     apps::DEFAULT_APPS.join(", ")
@@ -98,7 +101,7 @@ fn main() -> std::process::ExitCode {
         info!("logging to {}", path.display());
     }
 
-    let loaded = config::load();
+    let mut loaded = config::load();
     match &loaded.source {
         config::Source::File(path) => info!("config {}", path.display()),
         config::Source::Rejected(path) => {
@@ -115,21 +118,34 @@ fn main() -> std::process::ExitCode {
     // SAFETY: startup, before any thread is spawned.
     unsafe { environment.export() };
 
+    // Taken rather than moved out: `loaded` is still needed below to decide the app list.
     let compositor_command = args
         .compositor
-        .or(loaded.config.compositor)
+        .or(loaded.config.compositor.take())
         .unwrap_or_else(|| DEFAULT_COMPOSITOR.to_string());
 
     // An empty list in a config file means "no apps", so the defaults only apply when
     // nothing said anything at all.
-    let app_list: Vec<AppSpec> = match (args.apps, loaded.source.is_configured()) {
-        (Some(apps), _) => apps,
-        (None, true) => loaded.config.apps,
-        (None, false) => apps::DEFAULT_APPS
-            .iter()
-            .map(|app| AppSpec::command(*app))
-            .collect(),
-    };
+    //
+    // `autostart.toml` adds to the *default* session and nothing else. Anything that
+    // replaced the app list -- a `session.toml`, or `--app`/`--no-apps` -- has said what the
+    // session is, and quietly appending to it would make `--no-apps` untrue and a
+    // three-app `session.toml` start four. See `config`'s module docs.
+    let (mut app_list, takes_autostart) =
+        config::resolve_apps(args.apps, loaded, apps::DEFAULT_APPS);
+    if takes_autostart {
+        let (extra, from) = config::load_autostart();
+        if let Some(path) = from {
+            info!("autostart: {} app(s) from {}", extra.len(), path.display());
+        }
+        app_list.extend(extra);
+    } else if let Some(path) = config::autostart_path() {
+        // Say so rather than leaving the user to wonder why their autostart never runs.
+        info!(
+            "not reading {}: the app list was set explicitly",
+            path.display()
+        );
+    }
 
     info!("starting {compositor_command}");
     let mut compositor = match compositor::start(&compositor_command, &environment) {

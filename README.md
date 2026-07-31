@@ -57,6 +57,29 @@ An `[[app]]` list that is present but empty means no apps. Unknown keys are an e
 quietly ignored. A config that cannot be parsed is reported and then ignored: a session is usually started by a display
 manager with nothing watching its output, and refusing to start would leave a black screen and no way in to fix it.
 
+### Autostart
+
+`session.toml` says what the session *is*; `autostart.toml`, in the same directories and found the same way, says what
+else should run **alongside the usual one**. Its apps start after the default ones, in order.
+
+```toml
+# ~/.config/wlrix/autostart.toml
+[[app]]
+command = "nm-applet"
+
+[[app]]
+command = "syncthing"
+args = ["--no-browser"]
+```
+
+Only `[[app]]` is accepted here. There is no `compositor` or `[env]`, because both are settled before the compositor
+starts and autostart runs long after — accepting them would be accepting a setting that could not take effect.
+
+It is read **only when nothing has replaced the app list**: no `session.toml`, and no `--app`/`--no-apps` on the command
+line. Honoring both at once would mean a `session.toml` listing three apps quietly starting four, and `--no-apps` —
+which exists to get a bare compositor — would stop being true. When an `autostart.toml` is being skipped for this
+reason, the session log says so, rather than leaving you to wonder why it never ran.
+
 ### Options
 
 Anything given on the command line wins over the config file.
