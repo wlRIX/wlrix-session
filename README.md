@@ -57,6 +57,11 @@ An `[[app]]` list that is present but empty means no apps. Unknown keys are an e
 quietly ignored. A config that cannot be parsed is reported and then ignored: a session is usually started by a display
 manager with nothing watching its output, and refusing to start would leave a black screen and no way in to fix it.
 
+Note that a `session.toml` replaces the default list outright, and some of what is on it is not decoration. In
+particular `wlrix-idle` is what blanks the screen on a timeout and locks the session before the machine suspends — a
+`session.toml` that does not list it gets a session that does neither. `wlrix-session --help` prints the current default
+list.
+
 ### Autostart
 
 `session.toml` says what the session *is*; `autostart.toml`, in the same directories and found the same way, says what

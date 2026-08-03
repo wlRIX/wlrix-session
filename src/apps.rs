@@ -20,7 +20,16 @@ use crate::{config::AppSpec, environment::Environment};
 /// The desktop comes first so its background surface is up before any window can open over
 /// it. Nothing depends on that ordering -- a layer surface goes below windows whenever it
 /// arrives -- but starting the backdrop last would show a bare desktop for a moment.
-pub const DEFAULT_APPS: &[&str] = &["wlrix-desktop", "wlrix-toolchest", "wlrix-desks"];
+///
+/// `wlrix-idle` draws nothing at all, so where it sits is free; it goes last because a
+/// session that comes up without it is merely one that never blanks, while a session that
+/// comes up without a toolchest has no way to start anything.
+pub const DEFAULT_APPS: &[&str] = &[
+    "wlrix-desktop",
+    "wlrix-toolchest",
+    "wlrix-desks",
+    "wlrix-idle",
+];
 
 pub struct App {
     pub name: String,
