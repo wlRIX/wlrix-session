@@ -110,8 +110,9 @@ fn main() -> std::process::ExitCode {
         config::Source::None => info!("no config file; using defaults"),
     }
 
-    let mut environment = Environment::base();
-    // After the base, so a config file can override what the session assumes.
+    // Starts empty: what says which desktop this is comes from `start-wlrix` and is already in
+    // this process's environment, which children inherit. See `environment`.
+    let mut environment = Environment::default();
     for (key, value) in &loaded.config.env {
         environment.set(key, value);
     }

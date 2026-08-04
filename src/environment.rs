@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! The environment every process in the session inherits.
+//! The environment every process in the session inherits, on top of the session's own.
 //!
-//! Two kinds of variables live here. The fixed ones say what desktop this is, and can be
-//! set before anything starts. The rest -- `WAYLAND_DISPLAY` and `DISPLAY` -- are only
-//! known once the compositor is up, which is why apps are started after it rather than
-//! alongside it.
+//! What is here is only what the session *learns*: `WAYLAND_DISPLAY` and `DISPLAY`, which are
+//! not known until the compositor and XWayland are up, plus anything the config's `[env]`
+//! adds. That is why apps start after the compositor rather than alongside it.
+//!
+//! What says which desktop this is -- `XDG_CURRENT_DESKTOP`, `XDG_SESSION_DESKTOP`,
+//! `XDG_SESSION_TYPE` -- is **not** set here. `start-wlrix` exports it before the session
+//! manager starts, along with the toolkit backends, the keyring and the systemd user
+//! environment, and it is inherited from there. Setting it in both places meant two answers to
+//! the same question, and they had already drifted: the script said `XDG_SESSION_DESKTOP=wlRIX`
+//! and this said `wlrix`.
+//!
+//! Children get the process environment plus these, not instead of it -- nothing calls
+//! `env_clear` -- so the script's exports reach them either way.
 
 use std::collections::BTreeMap;
 
@@ -15,19 +24,6 @@ pub struct Environment {
 }
 
 impl Environment {
-    /// The variables that do not depend on the compositor.
-    ///
-    /// These are what portals, toolkits, and `.desktop` handling look at to work out
-    /// which desktop they are running under.
-    pub fn base() -> Self {
-        let mut environment = Self::default();
-        environment.set("XDG_SESSION_TYPE", "wayland");
-        // Capitalized as the brand is; this is the name that appears in `OnlyShowIn`.
-        environment.set("XDG_CURRENT_DESKTOP", "wlRIX");
-        environment.set("XDG_SESSION_DESKTOP", "wlrix");
-        environment
-    }
-
     pub fn set(&mut self, key: &str, value: &str) {
         self.vars.insert(key.to_string(), value.to_string());
     }

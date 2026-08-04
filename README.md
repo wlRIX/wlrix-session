@@ -16,15 +16,40 @@ cargo run
 
 ## Installing
 
-The session is launched by a display manager (or by `wlrix-greeter`) through a session entry:
-
 ```sh
-install -Dm644 share/wayland-sessions/wlrix.desktop \
-    /usr/share/wayland-sessions/wlrix.desktop
+just release
+sudo just install
 ```
 
-`wlrix-session`, `wlrix-compositor` and the desktop's apps need to be on `PATH`, or named by absolute path in the
-config.
+`install` deliberately does not build: it is normally run as root, and building as root leaves a target directory nobody
+can write to afterwards. `prefix` (default `/usr`) and `rootdir` (a staging root, as a package build wants) override
+where things land.
+
+What lands:
+
+| Path                                            |                                         |
+|-------------------------------------------------|-----------------------------------------|
+| `$prefix/bin/wlrix-session`                     | the session manager                     |
+| `$prefix/bin/start-wlrix`                       | what a display manager actually runs    |
+| `$prefix/lib/systemd/user/wlrix-session.target` | the user target other units can bind to |
+| `$prefix/share/wayland-sessions/wlrix.desktop`  | the entry a display manager offers      |
+
+`start-wlrix`, `wlrix-compositor` and the desktop's apps need to be on `PATH`, or named by absolute path in the config.
+
+### start-wlrix
+
+The session entry runs the **script**, not the binary. `start-wlrix` is where the session's environment is set up, and
+`wlrix-session` deliberately does not repeat any of it:
+
+- `XDG_CURRENT_DESKTOP`, `XDG_SESSION_DESKTOP`, `XDG_SESSION_TYPE`
+- the toolkit backends — `GDK_BACKEND`, `MOZ_ENABLE_WAYLAND`, `QT_QPA_PLATFORM` and friends
+- gnome-keyring, and `SSH_AUTH_SOCK` if a socket actually turned up
+- importing all of that into the systemd user environment, and clearing failed units left by a previous session
+- a D-Bus session bus, if there is not one already
+
+That is why `wlrix-greeter --session` defaults to `start-wlrix` too. Starting `wlrix-session` directly — by hand, or
+from a hand-written session entry — skips the lot, and the first symptom is usually a toolkit picking X11 or portals not
+knowing which desktop this is.
 
 Note that `desktop-file-validate` objects to `DesktopNames`, which is how a session tells the display manager what to
 set `XDG_CURRENT_DESKTOP` to. It is a session-file convention rather than part of the desktop-entry spec, so the
