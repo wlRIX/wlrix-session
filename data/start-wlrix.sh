@@ -77,7 +77,19 @@ if command -v systemctl > /dev/null; then
   done
 fi
 
-# Run wlrix-session
+# Run wlrix-session.
+#
+# Prefer the user bus that is already there. On a systemd system the user manager runs one at
+# $XDG_RUNTIME_DIR/bus whether or not DBUS_SESSION_BUS_ADDRESS happens to be exported into this
+# environment, and starting a *private* bus alongside it cuts the session off from the one
+# everything else uses: `dbus-update-activation-environment` then updates a bus no portal will
+# ever be activated on, and D-Bus services the session starts cannot be reached from outside it.
+#
+# dbus-run-session stays as the fallback for a machine with no user bus at all.
+if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" && -S "${XDG_RUNTIME_DIR:-}/bus" ]]; then
+  export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+fi
+
 if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
   exec dbus-run-session -- wlrix-session
 else

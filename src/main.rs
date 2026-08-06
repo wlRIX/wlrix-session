@@ -20,6 +20,7 @@ mod compositor;
 mod config;
 mod environment;
 mod signals;
+mod systemd;
 
 use config::AppSpec;
 use environment::Environment;
@@ -169,12 +170,19 @@ fn main() -> std::process::ExitCode {
         }
     }
 
+    // Now that there is a display to name, tell the user manager and the bus about it, and
+    // bring the session target up. Before the apps, so anything they ask a portal for finds
+    // one running. See `systemd`.
+    systemd::publish(&compositor.environment);
+    systemd::start_target();
+
     let started = apps::start_all(&app_list, &compositor.environment);
 
     // The compositor is the session. Nothing else is worth waiting on: if an app dies,
     // the desktop carries on, but when the compositor goes there is no desktop left.
     let status = compositor.child.wait();
     apps::stop_all(started);
+    systemd::stop_target();
 
     match status {
         Ok(status) => {

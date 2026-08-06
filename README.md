@@ -135,6 +135,32 @@ collide):
 This matters most on a TTY, where the console the session was writing to is covered by the compositor the moment it
 starts: the text is there, but none of it can be read. If an app does not appear, its own error is in the session log.
 
+## Portals and the systemd user session
+
+Once the compositor is up, the session hands `WAYLAND_DISPLAY`, `DISPLAY` and the `XDG_*` three to **two** places and
+then starts `wlrix-session.target`:
+
+| Where                            | Who reads it                                                             |
+|----------------------------------|--------------------------------------------------------------------------|
+| the systemd user manager         | units: their `ConditionEnvironment`, and what their processes start with |
+| the D-Bus activation environment | services started on demand by a bus request                              |
+
+`start-wlrix` cannot do this part. It runs before the compositor exists, so there is no socket name to publish yet —
+which is why it imports only what it already knows.
+
+Getting it wrong is quiet. `xdg-desktop-portal-wlr.service` carries
+`ConditionEnvironment=WAYLAND_DISPLAY`, checked against the *user manager's* environment rather than the session
+process's, so without this it is skipped with `unmet condition check` and a screen-capture client is simply told there
+are no sources. The portal is a `Type=dbus` unit, so it needs the activation environment too: a service the bus starts
+inherits nothing from us, and reads `XDG_CURRENT_DESKTOP` to decide which backend to load.
+
+`wlrix-session.target` is started after the variables are published, never before — a unit with a `ConditionEnvironment`
+is checked as it starts, and one started too early is skipped and stays skipped. It is stopped again when the compositor
+exits, so its units do not linger into the next session holding a stale `WAYLAND_DISPLAY`.
+
+All of it is best-effort: a desktop that refused to start because a portal helper was missing would be trading a working
+session for a working screenshot.
+
 ## How the environment reaches apps
 
 `WAYLAND_DISPLAY` and `DISPLAY` are not known until the compositor and XWayland are running, and a process cannot be
