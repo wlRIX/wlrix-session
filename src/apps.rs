@@ -17,14 +17,18 @@ use crate::{config::AppSpec, environment::Environment};
 
 /// What the session starts when there is no config file to say otherwise.
 ///
-/// The desktop comes first so its background surface is up before any window can open over
-/// it. Nothing depends on that ordering -- a layer surface goes below windows whenever it
-/// arrives -- but starting the backdrop last would show a bare desktop for a moment.
+/// The wallpaper comes first and the desktop second, so each is up before anything can open
+/// over it -- and in that order, because `wlrix-desktop`'s icons are drawn on the layer *above*
+/// `wlrix-bg`'s wallpaper and are transparent between them. Nothing depends on the ordering --
+/// a layer surface goes below windows whenever it arrives, and the two are on different layers
+/// so they cannot race for stacking -- but starting the backdrop last would show a bare desktop
+/// for a moment.
 ///
 /// `wlrix-idle` draws nothing at all, so where it sits is free; it goes last because a
 /// session that comes up without it is merely one that never blanks, while a session that
 /// comes up without a toolchest has no way to start anything.
 pub const DEFAULT_APPS: &[&str] = &[
+    "wlrix-bg",
     "wlrix-desktop",
     "wlrix-toolchest",
     "wlrix-desks",
