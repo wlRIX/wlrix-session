@@ -8,6 +8,10 @@
 //! The compositor reports these on stdout as `KEY=VALUE` lines when
 //! `WLRIX_SESSION_HANDSHAKE=1` is set; its logs go to stderr and are passed straight
 //! through to ours.
+//!
+//! The cursor theme rides the same channel, for a different reason: it is not discovered but
+//! *decided*, in the compositor's config, and a toolkit loads its own pointer from
+//! `XCURSOR_THEME`. See [`is_handshake_key`].
 
 use std::{
     io::{BufRead, BufReader},
@@ -86,8 +90,17 @@ pub fn start(command: &str, environment: &Environment) -> Result<Compositor, Str
 
 /// Keys the compositor is allowed to set. Anything else on stdout is passed through as
 /// output rather than trusted as configuration.
+///
+/// The two `XCURSOR_*` ones are not facts the compositor *discovers*, as the other two are --
+/// they come from its `[cursor]` config. They travel this way because the compositor is where
+/// that decision is made and this is the channel that already exists for handing its decisions
+/// to the apps the session starts: a toolkit loads its own pointer from `XCURSOR_THEME`, so
+/// without them a GTK window's cursor is Adwaita's while the desktop's is the theme wlRIX ships.
 fn is_handshake_key(key: &str) -> bool {
-    matches!(key, "WAYLAND_DISPLAY" | "DISPLAY")
+    matches!(
+        key,
+        "WAYLAND_DISPLAY" | "DISPLAY" | "XCURSOR_THEME" | "XCURSOR_SIZE"
+    )
 }
 
 /// Wait for the compositor to report its socket, and then for XWayland.
@@ -119,17 +132,48 @@ fn collect(
 
     // XWayland is worth waiting for -- an app started without `DISPLAY` cannot be given
     // one later -- but not worth failing over.
-    if environment.get("DISPLAY").is_none() {
-        match receiver.recv_timeout(XWAYLAND_TIMEOUT) {
+    //
+    // A loop rather than one `recv`: the handshake carries more than these two keys now, and a
+    // single receive would spend the wait on whichever line happened to arrive next and then
+    // declare XWayland missing while it was still starting.
+    let deadline = Instant::now() + XWAYLAND_TIMEOUT;
+    while environment.get("DISPLAY").is_none() {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        match receiver.recv_timeout(remaining) {
             Ok((key, value)) => environment.set(&key, &value),
             Err(_) => {
                 warn!(
                     "no DISPLAY from the compositor; X11 applications will not run \
                      this session"
                 );
+                break;
             }
         }
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_handshake_key;
+
+    /// The handshake is the compositor's stdout, and stdout also carries anything it says to a
+    /// human. Only these four keys are taken as environment; everything else is logged as the
+    /// output it is, so a stray `KEY=VALUE` in a message cannot set a variable for every app in
+    /// the session.
+    #[test]
+    fn only_the_four_compositor_facts_are_taken_from_stdout() {
+        for key in [
+            "WAYLAND_DISPLAY",
+            "DISPLAY",
+            "XCURSOR_THEME",
+            "XCURSOR_SIZE",
+        ] {
+            assert!(is_handshake_key(key), "{key} should be read");
+        }
+        for key in ["PATH", "LD_PRELOAD", "XCURSOR", "wayland_display", ""] {
+            assert!(!is_handshake_key(key), "{key:?} should be output, not env");
+        }
+    }
 }

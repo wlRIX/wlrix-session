@@ -137,8 +137,8 @@ starts: the text is there, but none of it can be read. If an app does not appear
 
 ## Portals and the systemd user session
 
-Once the compositor is up, the session hands `WAYLAND_DISPLAY`, `DISPLAY` and the `XDG_*` three to **two** places and
-then starts `wlrix-session.target`:
+Once the compositor is up, the session hands `WAYLAND_DISPLAY`, `DISPLAY`, the `XDG_*` three and the `XCURSOR_*` pair to
+**two** places and then starts `wlrix-session.target`:
 
 | Where                            | Who reads it                                                             |
 |----------------------------------|--------------------------------------------------------------------------|
@@ -169,3 +169,12 @@ handed them after it has started. So the compositor reports both on stdout as `K
 makes X11 apps work on a machine whose login environment has no `DISPLAY` at all.
 
 Waiting for XWayland is not fatal — a session without X11 still starts, with a warning.
+
+`XCURSOR_THEME` and `XCURSOR_SIZE` travel the same way, for a different reason: they are not *discovered*, they are
+decided, in the compositor's `[cursor]` config. A toolkit loads its own pointer from those two variables, so an app
+started without them draws Adwaita's cursor over a desktop drawing the theme wlRIX ships. Sending them through the
+handshake keeps that decision in one file instead of splitting it between `compositor.toml` and `start-wlrix`, which is
+how `XDG_SESSION_DESKTOP` came to have two different values before it was moved to the script alone.
+
+Only these four keys are accepted from the compositor's stdout; anything else on it is passed through to the log as
+output rather than trusted as configuration.

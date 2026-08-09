@@ -163,7 +163,12 @@ fn main() -> std::process::ExitCode {
     // than orphaning it.
     signals::forward_to(compositor.child.id());
 
-    for key in ["WAYLAND_DISPLAY", "DISPLAY"] {
+    for key in [
+        "WAYLAND_DISPLAY",
+        "DISPLAY",
+        "XCURSOR_THEME",
+        "XCURSOR_SIZE",
+    ] {
         match compositor.environment.get(key) {
             Some(value) => info!("{key}={value}"),
             None => info!("{key} unset"),

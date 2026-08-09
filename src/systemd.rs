@@ -39,12 +39,19 @@ const TARGET: &str = "wlrix-session.target";
 /// republished here because the script only reaches the systemd side: a portal activated
 /// through the bus reads `XDG_CURRENT_DESKTOP` to decide which backend to load, and it is not
 /// in the activation environment unless somebody puts it there.
+///
+/// The `XCURSOR_*` pair also comes from the compositor, over the same handshake, and is here for
+/// the same reason as the `XDG_*` three: a settings panel or a file dialog that the bus activates
+/// is not started by this process and would otherwise load a toolkit default pointer over a
+/// desktop drawing the theme from `compositor.toml`.
 const PUBLISHED: &[&str] = &[
     "WAYLAND_DISPLAY",
     "DISPLAY",
     "XDG_CURRENT_DESKTOP",
     "XDG_SESSION_TYPE",
     "XDG_SESSION_DESKTOP",
+    "XCURSOR_THEME",
+    "XCURSOR_SIZE",
 ];
 
 /// Hand the session's environment to the user manager and the bus.

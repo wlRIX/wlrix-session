@@ -2,8 +2,10 @@
 //! The environment every process in the session inherits, on top of the session's own.
 //!
 //! What is here is only what the session *learns*: `WAYLAND_DISPLAY` and `DISPLAY`, which are
-//! not known until the compositor and XWayland are up, plus anything the config's `[env]`
-//! adds. That is why apps start after the compositor rather than alongside it.
+//! not known until the compositor and XWayland are up, `XCURSOR_THEME` and `XCURSOR_SIZE`, which
+//! the compositor reports over the same handshake because its config is where they are decided,
+//! plus anything the config's `[env]` adds. That is why apps start after the compositor rather
+//! than alongside it.
 //!
 //! What says which desktop this is -- `XDG_CURRENT_DESKTOP`, `XDG_SESSION_DESKTOP`,
 //! `XDG_SESSION_TYPE` -- is **not** set here. `start-wlrix` exports it before the session
