@@ -181,11 +181,28 @@ fn main() -> std::process::ExitCode {
     systemd::publish(&compositor.environment);
     systemd::start_target();
 
-    let started = apps::start_all(&app_list, &compositor.environment);
+    // Before the apps, so no exit can happen in the gap between starting one and being able
+    // to hear about it.
+    signals::watch_children();
+    let mut started = apps::start_all(&app_list, &compositor.environment);
 
-    // The compositor is the session. Nothing else is worth waiting on: if an app dies,
-    // the desktop carries on, but when the compositor goes there is no desktop left.
-    let status = compositor.child.wait();
+    // The compositor is the session: when it goes, so does everything. Nothing *else* is worth
+    // ending the session for -- an app that dies leaves a desktop that carries on without it --
+    // but every app still has to be waited for as it exits, or it stays behind as a zombie.
+    //
+    // Hence a loop rather than a plain `wait` on the compositor: the session sleeps until a
+    // child of any kind has gone, then works out which. The compositor is asked first, so its
+    // exit is never delayed by a round of reaping, and the apps are reaped before the sleep so
+    // that anything which exited before this loop was reached is collected on the first pass.
+    let status = loop {
+        match compositor.child.try_wait() {
+            Ok(Some(status)) => break Ok(status),
+            Err(err) => break Err(err),
+            Ok(None) => {}
+        }
+        apps::reap(&mut started);
+        signals::wait_for_child_exit();
+    };
     apps::stop_all(started);
     systemd::stop_target();
 

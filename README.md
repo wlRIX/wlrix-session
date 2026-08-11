@@ -41,7 +41,12 @@ What lands:
 The session entry runs the **script**, not the binary. `start-wlrix` is where the session's environment is set up, and
 `wlrix-session` deliberately does not repeat any of it:
 
-- `XDG_CURRENT_DESKTOP`, `XDG_SESSION_DESKTOP`, `XDG_SESSION_TYPE`
+- `XDG_CURRENT_DESKTOP`, `XDG_SESSION_DESKTOP` — set only if they are not already; a display manager fills the first in
+  from `DesktopNames`
+- `XDG_SESSION_TYPE=wayland` — **forced**, unlike the two above. `pam_systemd` sets it from how the login arrived, so a
+  console login gets `tty` and so does a greetd login, which logind sees as a console login. Once the compositor is up
+  this is a Wayland session whatever it was started from, and the variable is what toolkits auto-detect on: Chromium and
+  Edge resolve `--ozone-platform-hint=auto` by reading it and fall back to X11 when it does not say `wayland`
 - the toolkit backends — `GDK_BACKEND`, `MOZ_ENABLE_WAYLAND`, `QT_QPA_PLATFORM` and friends
 - gnome-keyring, and `SSH_AUTH_SOCK` if a socket actually turned up
 - importing all of that into the systemd user environment, and clearing failed units left by a previous session

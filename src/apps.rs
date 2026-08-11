@@ -68,6 +68,33 @@ pub fn start_all(apps: &[AppSpec], environment: &Environment) -> Vec<App> {
     started
 }
 
+/// Collect the apps that have exited on their own, dropping them from the list.
+///
+/// Closing one is an ordinary thing to do -- the toolchest and desks are windows with a close
+/// button, not shell components -- and the desktop carries on without them. But a child nobody
+/// waits for stays on the process table as a zombie, and the session used to wait for its apps
+/// only at shutdown, so closing the Desks window left `[wlrix-desks] <defunct>` sitting there
+/// for the rest of the login.
+///
+/// Called whenever [`crate::signals::wait_for_child_exit`] reports something happened, so an app
+/// is reaped about as soon as it goes.
+pub fn reap(apps: &mut Vec<App>) {
+    apps.retain_mut(|app| match app.child.try_wait() {
+        Ok(Some(status)) => {
+            info!("{} exited ({status})", app.name);
+            false
+        }
+        Ok(None) => true,
+        // Dropped rather than kept: the only real answer here is that the child is already
+        // gone, and keeping it would have `stop_all` signal a pid the system is free to have
+        // given to something else by then.
+        Err(err) => {
+            warn!("could not check {}: {err}", app.name);
+            false
+        }
+    });
+}
+
 /// Ask every app to exit, then wait for it.
 ///
 /// Called when the compositor has gone: the apps' windows died with it, and leaving

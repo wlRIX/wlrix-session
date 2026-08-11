@@ -15,9 +15,27 @@ if command -v systemctl > /dev/null; then
   done
 fi
 
+# These two keep "only if it is not already set". A display manager sets XDG_CURRENT_DESKTOP
+# itself, from the DesktopNames in wlrix.desktop, and overriding either by hand is a legitimate
+# thing to want for a toolkit or portal quirk.
 export XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:=wlRIX}"
 export XDG_SESSION_DESKTOP="${XDG_SESSION_DESKTOP:=wlrix}"
-export XDG_SESSION_TYPE="${XDG_SESSION_TYPE:=wayland}"
+
+# This one is forced, and that is the difference that matters.
+#
+# It says what the session *is*, and pam_systemd sets it from how the login arrived: a console
+# login gets `tty`, and so does a greetd login, which is a console login as far as logind is
+# concerned. `${XDG_SESSION_TYPE:=wayland}` does nothing about that -- the parameter is set, just
+# set to the wrong thing -- so the session ran with `tty` here, on a TTY and through the greeter
+# alike.
+#
+# It matters because it is the flag toolkits auto-detect on. Chromium and Edge resolve
+# `--ozone-platform-hint=auto`, their default, by reading exactly this, and fall back to X11 when
+# it does not say `wayland` -- which is how this was found: Edge under XWayland here and native
+# Wayland on another desktop, from the same profile with no flags set either way.
+#
+# Whatever it said before, once the compositor is up this is a Wayland session.
+export XDG_SESSION_TYPE=wayland
 export _JAVA_AWT_WM_NONREPARENTING=1
 export GDK_BACKEND=wayland,x11
 export MOZ_ENABLE_WAYLAND=1
