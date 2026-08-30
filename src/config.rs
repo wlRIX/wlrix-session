@@ -373,7 +373,7 @@ mod tests {
     }
 
     #[test]
-    fn autostart_refuses_keys_it_could_not_honour() {
+    fn autostart_refuses_keys_it_could_not_honor() {
         // `compositor` and `env` are both settled before the compositor starts, long before
         // autostart runs. Accepting them silently would be accepting a setting that does
         // nothing; `deny_unknown_fields` turns that into a message.
