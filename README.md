@@ -92,6 +92,11 @@ particular `wlrix-idle` is what blanks the screen on a timeout and locks the ses
 `session.toml` that does not list it gets a session that does neither. `wlrix-session --help` prints the current default
 list.
 
+**Order matters for two of them.** `wlrix-tray` has to come after `wlrix-desktop`: both are wlr-layer-shell *bottom*
+surfaces, the compositor gives the pointer to whichever mapped later where they overlap, and the desktop's surface
+covers the whole output — so a tray started first is drawn but unclickable. `wlrix-bg` before `wlrix-desktop` is only
+cosmetic by comparison; they are on different layers and cannot race.
+
 ### Autostart
 
 `session.toml` says what the session *is*; `autostart.toml`, in the same directories and found the same way, says what
@@ -106,6 +111,9 @@ command = "nm-applet"
 command = "syncthing"
 args = ["--no-browser"]
 ```
+
+Both of those put a status icon in `wlrix-tray` rather than a window on the desktop, which is what an autostart entry
+usually wants to do.
 
 Only `[[app]]` is accepted here. There is no `compositor` or `[env]`, because both are settled before the compositor
 starts and autostart runs long after — accepting them would be accepting a setting that could not take effect.

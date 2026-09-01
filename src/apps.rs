@@ -24,12 +24,19 @@ use crate::{config::AppSpec, environment::Environment};
 /// so they cannot race for stacking -- but starting the backdrop last would show a bare desktop
 /// for a moment.
 ///
+/// **`wlrix-tray` after `wlrix-desktop` is not free the way those two are.** Both are on the
+/// wlr-layer-shell *bottom* layer, and the compositor's `layer_under` walks a layer's surfaces in
+/// map order, newest first -- so the one started later takes the pointer where they overlap.
+/// Started before the desktop, the tray would be drawn on screen and unclickable, since the
+/// desktop's surface covers the whole output.
+///
 /// `wlrix-idle` draws nothing at all, so where it sits is free; it goes last because a
 /// session that comes up without it is merely one that never blanks, while a session that
 /// comes up without a toolchest has no way to start anything.
 pub const DEFAULT_APPS: &[&str] = &[
     "wlrix-bg",
     "wlrix-desktop",
+    "wlrix-tray",
     "wlrix-toolchest",
     "wlrix-desks",
     "wlrix-idle",
