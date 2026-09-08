@@ -38,6 +38,18 @@ export XDG_SESSION_DESKTOP="${XDG_SESSION_DESKTOP:=wlrix}"
 export XDG_SESSION_TYPE=wayland
 export _JAVA_AWT_WM_NONREPARENTING=1
 export GDK_BACKEND=wayland,x11
+# GTK 3 reads its window-button order -- and everything else in the settings portal -- only when
+# this is set. Measured: with it, `gtk-decoration-layout` comes back as the
+# `menu:minimize,maximize` xdg-desktop-portal-wlrix reports, which is what IRIX's frame has;
+# without it GTK 3 keeps its own `menu:close` and ignores settings.ini for that key as well, so
+# there is no other way to give a GTK 3 window the right buttons.
+#
+# GTK 4 needs no such flag -- it reads the portal either way -- and this changes nothing for it.
+#
+# The rest of what it turns on is portals wlRIX does not implement, which `wlrix-portals.conf`
+# sends to the `gtk` backend: the same file chooser and print dialog GTK would have opened
+# itself, reached one indirection later.
+export GTK_USE_PORTAL=1
 export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORM="wayland;xcb"
 export QT_AUTO_SCREEN_SCALE_FACTOR=1
