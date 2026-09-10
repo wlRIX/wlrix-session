@@ -44,6 +44,18 @@ const TARGET: &str = "wlrix-session.target";
 /// the same reason as the `XDG_*` three: a settings panel or a file dialog that the bus activates
 /// is not started by this process and would otherwise load a toolkit default pointer over a
 /// desktop drawing the theme from `compositor.toml`.
+///
+/// `GTK_MODULES` is here for exactly that file dialog. `start-wlrix` exports it so every GTK 3
+/// application loads `wlrix-gtk-config` -- the module that reloads the user's gtk.css on a scheme
+/// change and takes GtkHeaderBar down to the compositor's 30px -- but the file chooser an
+/// application opens through the portal is drawn by `xdg-desktop-portal-gtk`, a bus-activated
+/// service that inherits nothing from this process. Found on a live session: every GTK 3
+/// application the session started had the module mapped, and the portal did not. Without this
+/// every file dialog on the desktop kept a 38px titlebar and the scheme it started with.
+///
+/// No cleanup at logout is needed for it any more than for the rest: with lingering off -- the
+/// default, and this machine's -- the user manager ends with the session and takes its
+/// environment with it.
 const PUBLISHED: &[&str] = &[
     "WAYLAND_DISPLAY",
     "DISPLAY",
@@ -52,6 +64,7 @@ const PUBLISHED: &[&str] = &[
     "XDG_SESSION_DESKTOP",
     "XCURSOR_THEME",
     "XCURSOR_SIZE",
+    "GTK_MODULES",
 ];
 
 /// Hand the session's environment to the user manager and the bus.

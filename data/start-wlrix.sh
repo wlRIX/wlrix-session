@@ -50,6 +50,17 @@ export GDK_BACKEND=wayland,x11
 # sends to the `gtk` backend: the same file chooser and print dialog GTK would have opened
 # itself, reached one indirection later.
 export GTK_USE_PORTAL=1
+# The wlRIX GTK 3 module (wlrix-gtk-config), which does the two things the stylesheets cannot:
+# reloads ~/.config/gtk-3.0/gtk.css when the scheme changes -- GTK 3 reads it once at startup and
+# never again -- and clears GtkHeaderBar's `has-subtitle`, whose reserved second line makes a
+# GTK 3 titlebar 38px against the compositor's 30.
+#
+# In the environment rather than as `gtk-modules` in settings.ini, which would be the other
+# place: GTK merges the two, but that key is a list, and the daemon writing it would have to
+# merge with whatever the user already had there. Nothing else in the session sets GTK_MODULES,
+# and GTK 2 -- the one other reader of this variable -- is not installed as a dependency of
+# anything here. GTK 4 removed module support and ignores it.
+export GTK_MODULES=wlrix-gtk-config
 export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORM="wayland;xcb"
 export QT_AUTO_SCREEN_SCALE_FACTOR=1
