@@ -30,9 +30,10 @@ use crate::{config::AppSpec, environment::Environment};
 /// Started before the desktop, the tray would be drawn on screen and unclickable, since the
 /// desktop's surface covers the whole output.
 ///
-/// `wlrix-idle` draws nothing at all, so where it sits is free; it goes last because a
-/// session that comes up without it is merely one that never blanks, while a session that
-/// comes up without a toolchest has no way to start anything.
+/// `wlrix-idle` and `wlrix-clipboard` draw nothing at all, so where they sit is free; they go
+/// last because a session that comes up without them is merely one that never blanks or forgets
+/// what was copied, while a session that comes up without a toolchest has no way to start
+/// anything.
 pub const DEFAULT_APPS: &[&str] = &[
     "wlrix-bg",
     "wlrix-desktop",
@@ -40,6 +41,7 @@ pub const DEFAULT_APPS: &[&str] = &[
     "wlrix-toolchest",
     "wlrix-desks",
     "wlrix-idle",
+    "wlrix-clipboard",
 ];
 
 pub struct App {
