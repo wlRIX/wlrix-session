@@ -90,8 +90,13 @@ manager with nothing watching its output, and refusing to start would leave a bl
 Note that a `session.toml` replaces the default list outright, and some of what is on it is not decoration. In
 particular `wlrix-idle` is what blanks the screen on a timeout and locks the session before the machine suspends — a
 `session.toml` that does not list it gets a session that does neither, and one that does not list `wlrix-clipboard` has
-no clipboard history (and `Super+V` opens a popup that says so). `wlrix-session --help` prints the current default
-list.
+no clipboard history (and `Super+V` opens a popup that says so). One that does not list `wlrix-sound` is silent: every
+component asks for its sounds, and with no daemon to answer nothing plays. `wlrix-session --help` prints the current
+default list.
+
+`wlrix-sound` goes first, before anything that might ask for a sound. Once the apps are started the session plays the
+login sound, waiting up to a second for the daemon to be listening if it was on the list. On a logout or shutdown it
+plays the logout sound and waits up to three seconds for it to finish before stopping the apps. A crash plays nothing.
 
 **Order matters for two of them.** `wlrix-tray` has to come after `wlrix-desktop`: both are wlr-layer-shell *bottom*
 surfaces, the compositor gives the pointer to whichever mapped later where they overlap, and the desktop's surface

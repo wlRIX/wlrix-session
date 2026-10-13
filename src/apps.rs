@@ -34,7 +34,12 @@ use crate::{config::AppSpec, environment::Environment};
 /// last because a session that comes up without them is merely one that never blanks or forgets
 /// what was copied, while a session that comes up without a toolchest has no way to start
 /// anything.
+///
+/// `wlrix-sound` draws nothing either, but goes **first**: it is the one the others ask for
+/// sounds, and the session's own login sound follows straight after this list is started. It
+/// is not a Wayland client, so starting it before anything is on screen costs nothing.
 pub const DEFAULT_APPS: &[&str] = &[
+    "wlrix-sound",
     "wlrix-bg",
     "wlrix-desktop",
     "wlrix-tray",

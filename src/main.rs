@@ -20,7 +20,10 @@ mod compositor;
 mod config;
 mod environment;
 mod signals;
+mod sound;
 mod systemd;
+
+use std::time::Duration;
 
 use config::AppSpec;
 use environment::Environment;
@@ -186,6 +189,15 @@ fn main() -> std::process::ExitCode {
     signals::watch_children();
     let mut started = apps::start_all(&app_list, &compositor.environment);
 
+    // IRIX's boot chime, once the desktop is coming up. The sound daemon was started a moment
+    // ago with the rest and may not be listening yet, so it is given a second -- but only when
+    // this session started it: a list without it is a session that wanted no sounds, and should
+    // not pay a second at every login for asking.
+    if app_list.iter().any(|app| app.command == "wlrix-sound") {
+        sound::wait_for_daemon(Duration::from_secs(1));
+    }
+    sound::play("desktop-login");
+
     // The compositor is the session: when it goes, so does everything. Nothing *else* is worth
     // ending the session for -- an app that dies leaves a desktop that carries on without it --
     // but every app still has to be waited for as it exits, or it stays behind as a zombie.
@@ -203,6 +215,14 @@ fn main() -> std::process::ExitCode {
         apps::reap(&mut started);
         signals::wait_for_child_exit();
     };
+
+    // The logout sound, heard out before the sound daemon goes down with the other apps. Only
+    // for a session that is ending on purpose -- a logout, or a shutdown passed on to the
+    // compositor -- and not for a crash, which is not a farewell. Bounded, so a sound server
+    // that has already gone cannot hold the logout up.
+    if matches!(&status, Ok(status) if status.success()) || signals::shutdown_requested() {
+        sound::play_and_wait("desktop-logout", Duration::from_secs(3));
+    }
     apps::stop_all(started);
     systemd::stop_target();
 
