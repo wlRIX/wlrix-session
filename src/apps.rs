@@ -38,8 +38,14 @@ use crate::{config::AppSpec, environment::Environment};
 /// `wlrix-sound` draws nothing either, but goes **first**: it is the one the others ask for
 /// sounds, and the session's own login sound follows straight after this list is started. It
 /// is not a Wayland client, so starting it before anything is on screen costs nothing.
+///
+/// `wlrix-polkit-agent` follows it: it draws nothing until somebody needs to type a password, and
+/// it should be registered with polkitd before anything in the session can ask for one. Without
+/// it, pkexec has nowhere to ask but the VT the session was started on, hidden under the
+/// compositor.
 pub const DEFAULT_APPS: &[&str] = &[
     "wlrix-sound",
+    "wlrix-polkit-agent",
     "wlrix-bg",
     "wlrix-desktop",
     "wlrix-tray",

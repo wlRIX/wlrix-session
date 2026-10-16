@@ -91,8 +91,10 @@ Note that a `session.toml` replaces the default list outright, and some of what 
 particular `wlrix-idle` is what blanks the screen on a timeout and locks the session before the machine suspends — a
 `session.toml` that does not list it gets a session that does neither, and one that does not list `wlrix-clipboard` has
 no clipboard history (and `Super+V` opens a popup that says so). One that does not list `wlrix-sound` is silent: every
-component asks for its sounds, and with no daemon to answer nothing plays. `wlrix-session --help` prints the current
-default list.
+component asks for its sounds, and with no daemon to answer nothing plays. One that does not list `wlrix-polkit-agent`
+cannot ask for an administrator's password: pkexec then has nowhere to prompt but the VT the session started on, hidden
+under the compositor, so Login Settings and the Software Manager report that no agent is running. `wlrix-session --help`
+prints the current default list.
 
 `wlrix-sound` goes first, before anything that might ask for a sound. Once the apps are started the session plays the
 login sound, waiting up to a second for the daemon to be listening if it was on the list. On a logout or shutdown it
