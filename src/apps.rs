@@ -30,6 +30,9 @@ use crate::{config::AppSpec, environment::Environment};
 /// Started before the desktop, the tray would be drawn on screen and unclickable, since the
 /// desktop's surface covers the whole output.
 ///
+/// `wlrix-network` follows the tray, though nothing depends on it: it publishes the Wi-Fi icon the
+/// tray draws, and registers again whenever a tray appears, so the two may start in either order.
+///
 /// `wlrix-idle` and `wlrix-clipboard` draw nothing at all, so where they sit is free; they go
 /// last because a session that comes up without them is merely one that never blanks or forgets
 /// what was copied, while a session that comes up without a toolchest has no way to start
@@ -56,6 +59,7 @@ pub const DEFAULT_APPS: &[&str] = &[
     "wlrix-bg",
     "wlrix-desktop",
     "wlrix-tray",
+    "wlrix-network",
     "wlrix-toolchest",
     "wlrix-desks",
     "wlrix-idle",
