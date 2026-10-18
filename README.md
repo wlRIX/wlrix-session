@@ -93,10 +93,12 @@ particular `wlrix-idle` is what blanks the screen on a timeout and locks the ses
 no clipboard history (and `Super+V` opens a popup that says so). One that does not list `wlrix-sound` is silent: every
 component asks for its sounds, and with no daemon to answer nothing plays. One that does not list `wlrix-polkit-agent`
 cannot ask for an administrator's password: pkexec then has nowhere to prompt but the VT the session started on, hidden
-under the compositor, so Login Settings and the Software Manager report that no agent is running. `wlrix-session --help`
-prints the current default list.
+under the compositor, so Login Settings and the Software Manager report that no agent is running. One that does not list
+`wlrix-osd` gets whichever notification daemon D-Bus activates first — mako or dunst if one is installed, otherwise
+notifications go nowhere. `wlrix-session --help` prints the current default list.
 
-`wlrix-sound` goes first, before anything that might ask for a sound. Once the apps are started the session plays the
+`wlrix-sound` goes first, before anything that might ask for a sound. `wlrix-osd` goes straight after it, so it owns
+`org.freedesktop.Notifications` before anything can send a notification and D-Bus-activate another daemon instead. Once the apps are started the session plays the
 login sound, waiting up to a second for the daemon to be listening if it was on the list. On a logout or shutdown it
 plays the logout sound and waits up to three seconds for it to finish before stopping the apps. A crash plays nothing.
 

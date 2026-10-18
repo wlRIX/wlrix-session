@@ -39,12 +39,19 @@ use crate::{config::AppSpec, environment::Environment};
 /// sounds, and the session's own login sound follows straight after this list is started. It
 /// is not a Wayland client, so starting it before anything is on screen costs nothing.
 ///
-/// `wlrix-polkit-agent` follows it: it draws nothing until somebody needs to type a password, and
+/// `wlrix-osd` follows it, and early is the point. It is the notification server, and that is
+/// decided by whoever owns `org.freedesktop.Notifications` first: mako and dunst are D-Bus
+/// activated, so the first program to send a notification before `wlrix-osd` has taken the name
+/// starts one of them instead, and it keeps the name for the rest of the session. It takes the name
+/// before it connects to the compositor, so being early in this list is enough.
+///
+/// `wlrix-polkit-agent` follows that: it draws nothing until somebody needs to type a password, and
 /// it should be registered with polkitd before anything in the session can ask for one. Without
 /// it, pkexec has nowhere to ask but the VT the session was started on, hidden under the
 /// compositor.
 pub const DEFAULT_APPS: &[&str] = &[
     "wlrix-sound",
+    "wlrix-osd",
     "wlrix-polkit-agent",
     "wlrix-bg",
     "wlrix-desktop",
