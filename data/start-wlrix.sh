@@ -68,6 +68,30 @@ export QT_ENABLE_HIGHDPI_SCALING=1
 # Use GTK themes with QT apps, provided by qt5-base or qt6-base
 export QT_QPA_PLATFORMTHEME=gtk3
 
+# The personal language, which the International panel's Set Personal writes to
+# ~/.config/locale.conf.
+#
+# Arch's /etc/profile.d/locale.sh reads that file too, but only when LANG is empty, and it never is
+# here: greetd's PAM stack has already set it from /etc/locale.conf. So the system's language
+# would always win. Here the personal file replaces it outright -- every locale variable is
+# cleared first, so a formats variable set system-wide does not survive under a personal
+# language that left it out -- and the result goes to the systemd user manager below, which is
+# where D-Bus-activated services take their environment from.
+locale_vars=(LANG LANGUAGE LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES LC_PAPER
+  LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT LC_IDENTIFICATION)
+locale_conf="${XDG_CONFIG_HOME:-$HOME/.config}/locale.conf"
+personal_locale=
+if [ -r "$locale_conf" ]; then
+  unset "${locale_vars[@]}"
+  # A broken file costs the personal language, not the session.
+  if . "$locale_conf"; then
+    personal_locale=1
+  else
+    echo "start-wlrix: $locale_conf could not be read; using the system language" >&2
+  fi
+  export "${locale_vars[@]}"
+fi
+
 # Start gnome keyring components if the daemon is active
 # -> check if /run/user/$UID/keyring exists
 if [ -d "/run/user/$(id -u)/keyring" ]; then
@@ -92,6 +116,19 @@ if command -v systemctl > /dev/null; then
   # Import some variables that we explicitly want to have available
   # in the user session.
   systemctl --user import-environment XDG_SESSION_TYPE XDG_CURRENT_DESKTOP SSH_AUTH_SOCK
+
+  # The personal language replaces the system's in the user manager as well: the variables it
+  # sets are imported, and the ones it leaves unset are removed, or a system-wide LC_TIME would
+  # go on reaching every service the bus starts.
+  if [ -n "$personal_locale" ]; then
+    for name in "${locale_vars[@]}"; do
+      if [ -n "${!name:-}" ]; then
+        systemctl --user import-environment "$name" ||:
+      else
+        systemctl --user unset-environment "$name" ||:
+      fi
+    done
+  fi
 
   # For environment variables already imported into the user's
   # session, if the value imported differs from teh value in this

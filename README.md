@@ -48,6 +48,9 @@ The session entry runs the **script**, not the binary. `start-wlrix` is where th
   this is a Wayland session whatever it was started from, and the variable is what toolkits auto-detect on: Chromium and
   Edge resolve `--ozone-platform-hint=auto` by reading it and fall back to X11 when it does not say `wayland`
 - the toolkit backends — `GDK_BACKEND`, `MOZ_ENABLE_WAYLAND`, `QT_QPA_PLATFORM` and friends
+- the personal language: `~/.config/locale.conf`, which the International panel's Set Personal writes, replaces every
+  locale variable the login handed over. Arch's own `profile.d/locale.sh` reads that file only when `LANG` is empty,
+  and under greetd it never is, so without this the system's language would always win
 - gnome-keyring, and `SSH_AUTH_SOCK` if a socket actually turned up
 - importing all of that into the systemd user environment, and clearing failed units left by a previous session
 - a D-Bus session bus, if there is not one already
