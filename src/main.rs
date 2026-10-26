@@ -19,6 +19,7 @@ mod apps;
 mod compositor;
 mod config;
 mod environment;
+mod priority;
 mod signals;
 mod sound;
 mod systemd;
@@ -104,6 +105,10 @@ fn main() -> std::process::ExitCode {
     if let Some(path) = &log_path {
         info!("logging to {}", path.display());
     }
+
+    // Before anything is started, so the compositor and every app inherit the result. See
+    // `priority`.
+    priority::reset();
 
     let mut loaded = config::load();
     match &loaded.source {

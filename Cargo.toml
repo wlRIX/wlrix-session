@@ -8,8 +8,8 @@ repository = "https://github.com/wlrix/wlrix-session"
 publish = false
 
 [dependencies]
-# Only for signal handling: forwarding SIGTERM/SIGINT to the compositor rather than
-# dying and orphaning it.
+# Signal handling (forwarding SIGTERM/SIGINT to the compositor rather than dying and
+# orphaning it) and resetting an inherited low priority (see `src/priority.rs`).
 libc = "0.2"
 # The session config file. TOML is wlRIX's config format throughout, so the compositor
 # and greeter read the same shape of file.
