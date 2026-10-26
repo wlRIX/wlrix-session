@@ -37,6 +37,9 @@ pub struct Compositor {
     pub child: Child,
     /// What the compositor reported, ready to hand to apps.
     pub environment: Environment,
+    /// The saved session to reopen, when the compositor has one: `WLRIX_RESTORE`. See
+    /// [`crate::restore`].
+    pub restore: Option<String>,
 }
 
 /// Start the compositor and wait until it is usable.
@@ -78,7 +81,15 @@ pub fn start(command: &str, environment: &Environment) -> Result<Compositor, Str
 
     let mut environment = environment.clone();
     match collect(&receiver, &mut environment, &mut child) {
-        Ok(()) => Ok(Compositor { child, environment }),
+        Ok(()) => {
+            // For the session, not the apps: it names a file only the session reads.
+            let restore = environment.remove("WLRIX_RESTORE");
+            Ok(Compositor {
+                child,
+                environment,
+                restore,
+            })
+        }
         Err(err) => {
             // Do not leave a half-started compositor behind.
             let _ = child.kill();
@@ -96,10 +107,13 @@ pub fn start(command: &str, environment: &Environment) -> Result<Compositor, Str
 /// that decision is made and this is the channel that already exists for handing its decisions
 /// to the apps the session starts: a toolkit loads its own pointer from `XCURSOR_THEME`, so
 /// without them a GTK window's cursor is Adwaita's while the desktop's is the theme wlRIX ships.
+///
+/// `WLRIX_RESTORE` is not for the apps at all: it names the saved session the compositor is
+/// expecting windows from, and [`start`] takes it back out before anything is exported.
 fn is_handshake_key(key: &str) -> bool {
     matches!(
         key,
-        "WAYLAND_DISPLAY" | "DISPLAY" | "XCURSOR_THEME" | "XCURSOR_SIZE"
+        "WAYLAND_DISPLAY" | "DISPLAY" | "XCURSOR_THEME" | "XCURSOR_SIZE" | "WLRIX_RESTORE"
     )
 }
 

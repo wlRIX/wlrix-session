@@ -20,6 +20,7 @@ mod compositor;
 mod config;
 mod environment;
 mod priority;
+mod restore;
 mod signals;
 mod sound;
 mod systemd;
@@ -193,6 +194,11 @@ fn main() -> std::process::ExitCode {
     // to hear about it.
     signals::watch_children();
     let mut started = apps::start_all(&app_list, &compositor.environment);
+    // The windows from the last session, after the desktop's own apps so they open over it.
+    // Kept with the rest, so each is reaped when it exits and stopped at logout.
+    if let Some(path) = &compositor.restore {
+        started.extend(restore::start_saved(path, &compositor.environment));
+    }
 
     // IRIX's boot chime, once the desktop is coming up. The sound daemon was started a moment
     // ago with the rest and may not be listening yet, so it is given a second -- but only when

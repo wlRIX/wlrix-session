@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! The desktop's own apps, started once the compositor is up.
 //!
-//! These are ordinary Wayland clients -- the toolchest and desks are normal windows in
-//! IRIX, not shell components -- so there is nothing special about starting them beyond
+//! These are ordinary Wayland clients -- the toolchest is a normal window in IRIX, not a
+//! shell component -- so there is nothing special about starting them beyond
 //! doing it after the compositor exists and with its environment. `wlrix-desktop` is the
 //! exception in kind, being a layer-shell background surface rather than a window, but it
 //! is started exactly the same way.
@@ -53,6 +53,10 @@ use crate::{config::AppSpec, environment::Environment};
 /// it should be registered with polkitd before anything in the session can ask for one. Without
 /// it, pkexec has nowhere to ask but the VT the session was started on, hidden under the
 /// compositor.
+///
+/// The toolchest is the one window here, and the one window every login has whatever was open
+/// at the last logout. The Desks panel used to be here too; it is reopened with the saved
+/// session now, like any other window, so a login brings it back only if it was left open.
 pub const DEFAULT_APPS: &[&str] = &[
     "wlrix-sound",
     "wlrix-osd",
@@ -64,7 +68,6 @@ pub const DEFAULT_APPS: &[&str] = &[
     "wlrix-power",
     "wlrix-bluetooth",
     "wlrix-toolchest",
-    "wlrix-desks",
     "wlrix-idle",
     "wlrix-clipboard",
 ];

@@ -30,6 +30,11 @@ impl Environment {
         self.vars.insert(key.to_string(), value.to_string());
     }
 
+    /// Take a variable back out, for a handshake value that is for the session alone.
+    pub fn remove(&mut self, key: &str) -> Option<String> {
+        self.vars.remove(key)
+    }
+
     pub fn get(&self, key: &str) -> Option<&str> {
         self.vars.get(key).map(String::as_str)
     }
