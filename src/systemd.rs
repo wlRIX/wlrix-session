@@ -53,7 +53,7 @@ const TARGET: &str = "wlrix-session.target";
 /// application the session started had the module mapped, and the portal did not. Without this
 /// every file dialog on the desktop kept a 38px titlebar and the scheme it started with.
 ///
-/// `GNOME_DESKTOP_SESSION_ID` is what tells Chromium and Electron to keep their encryption key in
+/// `DESKTOP_SESSION` is what tells Chromium and Electron to keep their encryption key in
 /// the Secret Service rather than in the plain-text fallback; `start-wlrix` says why. It is here so
 /// an Electron app the bus or the user manager starts -- a `DBusActivatable` entry, a
 /// `systemd-run` scope -- finds its keyring the same way one the session starts does.
@@ -70,7 +70,7 @@ const PUBLISHED: &[&str] = &[
     "XCURSOR_THEME",
     "XCURSOR_SIZE",
     "GTK_MODULES",
-    "GNOME_DESKTOP_SESSION_ID",
+    "DESKTOP_SESSION",
 ];
 
 /// Hand the session's environment to the user manager and the bus.

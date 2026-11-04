@@ -79,18 +79,31 @@ export QT_QPA_PLATFORMTHEME=gtk3
 # plain text keeps them in memory only: found on a live session, where the Claude app logged
 # `backend=basic_text` and "tokens will not persist", and asked for a sign-in after every restart.
 #
-# Not by adding GNOME to XDG_CURRENT_DESKTOP, which is what Chromium reads first. That one is the
-# desktop-entry spec's: every `OnlyShowIn=GNOME` entry would start showing up in menus and
-# autostart, every `NotShowIn=GNOME` one would disappear, and GIO and GTK read it as well. This
-# variable is the legacy fallback Chromium checks once XDG_CURRENT_DESKTOP and DESKTOP_SESSION name
-# nothing it knows (base/nix/xdg_util.cc, GetDesktopEnvironment). The value is the one
-# gnome-session itself sets. The only other readers are the same kind of last-resort fallback:
-# xdg-utils (`xdg-open` uses `gio open`, which reads the same mimeapps.list), Java AWT and
-# Python's webbrowser module.
+# What Chromium is told is XFCE, and only through DESKTOP_SESSION, which it checks once
+# XDG_CURRENT_DESKTOP names nothing it knows (base/nix/xdg_util.cc, GetDesktopEnvironment); there
+# it matches any value that *contains* `xfce`.
 #
-# One side effect inside Chromium: as a GNOME desktop it takes its proxy from the
-# org.gnome.system.proxy settings rather than from `http_proxy` and friends.
-export GNOME_DESKTOP_SESSION_ID=this-is-deprecated
+# XFCE because, of the desktops that get libsecret, it is the one Chromium otherwise treats exactly
+# like an unknown desktop: proxy from `http_proxy` and friends, no Wayland IME or popup quirks, the
+# same tray icon and settings links. Measured, not assumed: GNOME -- tried first, through
+# GNOME_DESKTOP_SESSION_ID -- also makes Chromium load GTK 4 on Wayland (ui/gtk/gtk_compat.cc),
+# and Edge came up with GTK 4's colors and window buttons, which nothing in wlRIX themes. With XFCE
+# Edge stays on GTK 3, as it is with no variable at all.
+#
+# The one difference left is the browser theme. Every desktop Chromium gives libsecret also gets
+# the GTK theme as its default (ui/linux/linux_ui_factory.cc, GetDefaultSystemTheme), and a profile
+# that never picked one starts on it -- GTK's window buttons and colors instead of Classic -- and
+# writes `system_theme: 1` into its Preferences, so it stays there. Picking Classic once in the
+# browser's appearance settings stores that instead, and it sticks.
+#
+# Not in XDG_CURRENT_DESKTOP: that one is the desktop-entry spec's, and naming another desktop
+# there would change which `OnlyShowIn`/`NotShowIn` entries appear in menus and autostart.
+# Nothing else reads DESKTOP_SESSION as a substring: xdg-utils and LibreOffice compare it whole,
+# so `wlrix-xfce-compat` is not XFCE to them, and both read XDG_CURRENT_DESKTOP first anyway.
+#
+# Forced rather than defaulted, like XDG_SESSION_TYPE above: a display manager sets it to the
+# session file's name, `wlrix`, which would undo this.
+export DESKTOP_SESSION=wlrix-xfce-compat
 
 # The personal language, which the International panel's Set Personal writes to
 # ~/.config/locale.conf.
