@@ -52,6 +52,10 @@ The session entry runs the **script**, not the binary. `start-wlrix` is where th
   locale variable the login handed over. Arch's own `profile.d/locale.sh` reads that file only when `LANG` is empty,
   and under greetd it never is, so without this the system's language would always win
 - gnome-keyring, and `SSH_AUTH_SOCK` if a socket actually turned up
+- `GNOME_DESKTOP_SESSION_ID`, so Chromium and Electron apps store their encryption key in that keyring. They choose a
+  password store from the desktop name alone, and one they do not recognize, `wlRIX` included, gets the plain-text
+  fallback: no saved sign-ins, and apps asking for a sign-in after every restart. This is the legacy variable Chromium
+  checks after `XDG_CURRENT_DESKTOP`, so `XDG_CURRENT_DESKTOP` can stay `wlRIX`
 - importing all of that into the systemd user environment, and clearing failed units left by a previous session
 - a D-Bus session bus, if there is not one already
 

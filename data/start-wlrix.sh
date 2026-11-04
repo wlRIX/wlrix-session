@@ -67,6 +67,30 @@ export QT_AUTO_SCREEN_SCALE_FACTOR=1
 export QT_ENABLE_HIGHDPI_SCALING=1
 # Use GTK themes with QT apps, provided by qt5-base or qt6-base
 export QT_QPA_PLATFORMTHEME=gtk3
+# Tells Chromium and every Electron app that the Secret Service (gnome-keyring, below) is there to
+# store their encryption key in.
+#
+# Chromium picks its password store from the desktop name and from nothing else: KDE gets KWallet,
+# a list of known GTK desktops (GNOME, XFCE, Cinnamon, COSMIC, ...) gets libsecret, and any other
+# name gets `basic`, which is the hard-coded key -- even with org.freedesktop.secrets on the bus
+# and the login keyring unlocked. `wlRIX` is not on that list
+# (components/os_crypt/sync/key_storage_util_linux.cc, SelectBackend). Electron's safeStorage
+# then reports `isEncryptionAvailable() == false`, and an app that refuses to keep secrets in
+# plain text keeps them in memory only: found on a live session, where the Claude app logged
+# `backend=basic_text` and "tokens will not persist", and asked for a sign-in after every restart.
+#
+# Not by adding GNOME to XDG_CURRENT_DESKTOP, which is what Chromium reads first. That one is the
+# desktop-entry spec's: every `OnlyShowIn=GNOME` entry would start showing up in menus and
+# autostart, every `NotShowIn=GNOME` one would disappear, and GIO and GTK read it as well. This
+# variable is the legacy fallback Chromium checks once XDG_CURRENT_DESKTOP and DESKTOP_SESSION name
+# nothing it knows (base/nix/xdg_util.cc, GetDesktopEnvironment). The value is the one
+# gnome-session itself sets. The only other readers are the same kind of last-resort fallback:
+# xdg-utils (`xdg-open` uses `gio open`, which reads the same mimeapps.list), Java AWT and
+# Python's webbrowser module.
+#
+# One side effect inside Chromium: as a GNOME desktop it takes its proxy from the
+# org.gnome.system.proxy settings rather than from `http_proxy` and friends.
+export GNOME_DESKTOP_SESSION_ID=this-is-deprecated
 
 # The personal language, which the International panel's Set Personal writes to
 # ~/.config/locale.conf.
