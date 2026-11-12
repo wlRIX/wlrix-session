@@ -105,6 +105,25 @@ export QT_QPA_PLATFORMTHEME=gtk3
 # session file's name, `wlrix`, which would undo this.
 export DESKTOP_SESSION=wlrix-xfce-compat
 
+# wlRIX's defaults for other programs' configuration: share/wlrix/xdg next to this script's bin/,
+# put ahead of whatever XDG_CONFIG_DIRS already lists (the spec's default is /etc/xdg). A file
+# there is used only when the user has no file of the same name in ~/.config, so it is a default
+# and nothing more, and it reaches the wlRIX session alone rather than every desktop on the
+# machine, as /etc/xdg would.
+#
+# What is there:
+# - fcitx5/conf/xcb.conf, which stops fcitx5 from replacing XWayland's keymap with its
+#   input-method group's layout -- `us` in a profile fcitx5 made itself -- so X11 clients such as
+#   Steam type the layout compositor.toml sets, like every Wayland client. The file says why.
+wlrix_xdg="$(dirname "$(readlink -f "$0")")/../share/wlrix/xdg"
+if [ -d "$wlrix_xdg" ]; then
+  wlrix_xdg="$(readlink -f "$wlrix_xdg")"
+  case ":${XDG_CONFIG_DIRS:-}:" in
+    *":$wlrix_xdg:"*) ;;
+    *) export XDG_CONFIG_DIRS="$wlrix_xdg:${XDG_CONFIG_DIRS:-/etc/xdg}" ;;
+  esac
+fi
+
 # The personal language, which the International panel's Set Personal writes to
 # ~/.config/locale.conf.
 #
@@ -152,7 +171,10 @@ fi
 if command -v systemctl > /dev/null; then
   # Import some variables that we explicitly want to have available
   # in the user session.
-  systemctl --user import-environment XDG_SESSION_TYPE XDG_CURRENT_DESKTOP SSH_AUTH_SOCK
+  # XDG_CONFIG_DIRS too, so a program the bus or the user manager starts -- fcitx5 can be
+  # D-Bus activated -- reads the same defaults as one the session starts.
+  systemctl --user import-environment XDG_SESSION_TYPE XDG_CURRENT_DESKTOP SSH_AUTH_SOCK \
+    XDG_CONFIG_DIRS
 
   # The personal language replaces the system's in the user manager as well: the variables it
   # sets are imported, and the ones it leaves unset are removed, or a system-wide LC_TIME would

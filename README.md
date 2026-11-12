@@ -33,6 +33,7 @@ What lands:
 | `$prefix/bin/start-wlrix`                       | what a display manager actually runs    |
 | `$prefix/lib/systemd/user/wlrix-session.target` | the user target other units can bind to |
 | `$prefix/share/wayland-sessions/wlrix.desktop`  | the entry a display manager offers      |
+| `$prefix/share/wlrix/xdg/fcitx5/conf/xcb.conf`  | fcitx5 default: leave XWayland's keymap alone |
 
 `start-wlrix`, `wlrix-compositor` and the desktop's apps need to be on `PATH`, or named by absolute path in the config.
 
@@ -58,6 +59,11 @@ The session entry runs the **script**, not the binary. `start-wlrix` is where th
   this variable only after `XDG_CURRENT_DESKTOP` and matches `xfce` anywhere in it. XFCE is the libsecret desktop it
   otherwise treats like an unknown one; GNOME would also switch it to GTK 4 on Wayland, which wlRIX does not theme.
   `XDG_CURRENT_DESKTOP` stays `wlRIX`
+- `$prefix/share/wlrix/xdg` put first in `XDG_CONFIG_DIRS`: wlRIX's defaults for other programs' config files, used
+  only where `~/.config` has no file of the same name. For now that is fcitx5's `conf/xcb.conf`, which turns off
+  "Allow Overriding System XKB Settings". With it on, fcitx5 replaced XWayland's keymap with its input-method group's
+  layout at every start, and a profile fcitx5 made on its own has `us` there. X11 clients such as Steam then typed US
+  while Wayland clients typed the layout set in `compositor.toml`
 - importing all of that into the systemd user environment, and clearing failed units left by a previous session
 - a D-Bus session bus, if there is not one already
 

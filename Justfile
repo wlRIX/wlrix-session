@@ -23,6 +23,12 @@ target-dst := systemddir / name + '.target'
 session-src := 'data' / 'wlrix.desktop'
 session-dst := sessiondir / 'wlrix.desktop'
 
+# Defaults for other programs' config files, read through XDG_CONFIG_DIRS, which start-wlrix
+# points here first. Under share/ rather than /etc/xdg so they apply to the wlRIX session alone.
+xdgdir := usrdir / 'share' / 'wlrix' / 'xdg'
+fcitx-xcb-src := 'data' / 'xdg' / 'fcitx5' / 'conf' / 'xcb.conf'
+fcitx-xcb-dst := xdgdir / 'fcitx5' / 'conf' / 'xcb.conf'
+
 # List available recipes.
 default:
   @just --list
@@ -54,7 +60,8 @@ install:
   install -Dm0755 '{{start-src}}' '{{start-dst}}'
   install -Dm0644 '{{target-src}}' '{{target-dst}}'
   install -Dm0644 '{{session-src}}' '{{session-dst}}'
-  for f in '{{bin-dst}}' '{{start-dst}}' '{{target-dst}}' '{{session-dst}}'; do
+  install -Dm0644 '{{fcitx-xcb-src}}' '{{fcitx-xcb-dst}}'
+  for f in '{{bin-dst}}' '{{start-dst}}' '{{target-dst}}' '{{session-dst}}' '{{fcitx-xcb-dst}}'; do
       echo "installed $f"
   done
   echo
@@ -65,8 +72,9 @@ install:
 uninstall:
   #!/usr/bin/env bash
   set -euo pipefail
-  rm -f '{{bin-dst}}' '{{start-dst}}' '{{target-dst}}' '{{session-dst}}'
-  echo "removed the session, its launcher and the session entry"
+  rm -f '{{bin-dst}}' '{{start-dst}}' '{{target-dst}}' '{{session-dst}}' '{{fcitx-xcb-dst}}'
+  rmdir -p --ignore-fail-on-non-empty "$(dirname '{{fcitx-xcb-dst}}')" 2>/dev/null ||:
+  echo "removed the session, its launcher, the session entry and its config defaults"
 
 clean:
   cargo clean
